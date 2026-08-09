@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // User profiles
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid);
+      allow delete: if false;
+    }
+
+    // Feed posts (read by all signed-in users, write only own posts)
+    match /feedPosts/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+    }
+
+    // Multiplayer lobbies
+    match /lobbies/{lobbyId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.hostUid == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.hostUid == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.hostUid == request.auth.uid;
+    }
+
+    // Match history
+    match /matches/{matchId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.players;
+      allow create: if isSignedIn() && request.auth.uid in request.resource.data.players;
+      allow update: if isSignedIn() && request.auth.uid in resource.data.players;
+      allow delete: if false;
+    }
+
+    // Friends subcollection per user
+    match /friends/{uid}/list/{friendUid} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // Training sessions
+    match /trainingSessions/{sessionId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // Daily aggregated stats
+    match /statsDaily/{docId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create, update: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+  }
+}

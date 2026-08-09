@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "261142314004",
+    "project_id": "dartscore-7df93",
+    "storage_bucket": "dartscore-7df93.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:261142314004:android:3a6c52e4ac182badba7b01",
+        "android_client_info": {
+          "package_name": "com.example.dartscore"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9-_hyMco_ZfiypkB4tegkSAHBlrdQUG4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
