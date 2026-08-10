@@ -28,7 +28,15 @@ service cloud.firestore {
     match /lobbies/{lobbyId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.hostUid == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.hostUid == request.auth.uid;
+      allow update: if isSignedIn() && (
+        resource.data.hostUid == request.auth.uid ||
+        (
+          resource.data.status == 'waiting' &&
+          resource.data.guestUid == null &&
+          request.resource.data.guestUid == request.auth.uid
+        ) ||
+        resource.data.guestUid == request.auth.uid
+      );
       allow delete: if isSignedIn() && resource.data.hostUid == request.auth.uid;
     }
 
@@ -42,6 +50,11 @@ service cloud.firestore {
 
     // Friends subcollection per user
     match /friends/{uid}/list/{friendUid} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // Follows subcollection per user
+    match /follows/{uid}/list/{targetUid} {
       allow read, write: if isOwner(uid);
     }
 

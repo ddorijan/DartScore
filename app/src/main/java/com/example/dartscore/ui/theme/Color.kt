@@ -18,4 +18,6 @@ val TextSecondary = Color(0xFFAAAAAA)
 val TextHint = Color(0xFF666666)
 
 val BottomNavBackground = Color(0xFF111111)
-val TopBarBorder = Color(0xFF2E6B3E)
+val TopBarBorder = Color(0xFF333333)
+val BorderNeutral = Color(0xFF333333)
+val BorderSubtle = Color(0xFF444444)

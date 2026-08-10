@@ -82,11 +82,13 @@ fun RegisterScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Logo
             AuthLogo()
@@ -187,7 +189,7 @@ fun RegisterScreen(
                         )
                         .border(
                             1.5.dp,
-                            if (termsAccepted) GreenAccent else Color(0xFF555555),
+                            BorderSubtle,
                             RoundedCornerShape(4.dp)
                         )
                         .clickable { termsAccepted = !termsAccepted },
@@ -274,6 +276,7 @@ fun RegisterScreen(
 
                             val profile = hashMapOf(
                                 "displayName" to cleanUsername,
+                                "displayNameLower" to cleanUsername.lowercase(),
                                 "email" to cleanEmail,
                                 "birthDate" to birthDate.trim(),
                                 "avatarUrl" to "",
@@ -284,6 +287,10 @@ fun RegisterScreen(
                                     "doubleIn" to false,
                                     "doubleOut" to true,
                                     "setsOrLegs" to "legs"
+                                ),
+                                "onlineStats" to mapOf(
+                                    "wins" to 0,
+                                    "losses" to 0
                                 )
                             )
 

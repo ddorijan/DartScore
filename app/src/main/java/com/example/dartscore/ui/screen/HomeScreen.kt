@@ -27,26 +27,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.dartscore.data.FeedRepository
+import com.example.dartscore.data.MatchRepository
+import com.example.dartscore.model.FeedPost
+import com.example.dartscore.model.ActivityItem
+import com.example.dartscore.model.AppNotification
+import com.example.dartscore.ui.screen.social.ActivitiesFeedList
+import com.example.dartscore.ui.screen.social.MatchHistoryList
 import com.example.dartscore.ui.theme.*
-import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
 
-// ─── Data classes ───────────────────────────────────────────────────────────
-
-data class ActivityItem(
-    val userName: String,
-    val actionText: String,
-    val timeAgo: String,
-    val detail: String,
-    val score: String
-)
-
-// ─── Sample data ────────────────────────────────────────────────────────────
-
-private val sampleActivities = listOf(
-    ActivityItem("Marko D.", "je objavio novi rezultat", "prije 2h", "301 - SINGLE HIT", "106  Checkout"),
-    ActivityItem("Luka P.", "je pobijedio Ivana K.", "prije 4h", "Luka P. 3  vs  Ivan K. 1", ""),
-    ActivityItem("Petar T.", "je postavio novi osobni rekord", "prije 6h", "301 - DOUBLE IN / DOUBLE OUT", "78  Checkout")
-)
+// ─── Sample data removed — activities load from Firestore feed ───────────────
 
 // ─── Dartboard Canvas ───────────────────────────────────────────────────────
 
@@ -102,25 +93,33 @@ fun DartboardCanvas(modifier: Modifier = Modifier) {
 // ─── Top App Bar ─────────────────────────────────────────────────────────────
 
 @Composable
-fun DartScoreTopBar(onMenuClick: () -> Unit = {}) {
+fun DartScoreTopBar(
+    onNavigateToAccount: () -> Unit = {},
+    onNavigateToLogin: () -> Unit = {},
+    onNavigateToRegister: () -> Unit = {},
+    notifications: List<AppNotification> = emptyList()
+) {
+    val auth = remember { FirebaseAuth.getInstance() }
+    var currentUser by remember { mutableStateOf(auth.currentUser) }
+    var notificationsExpanded by remember { mutableStateOf(false) }
+    var accountMenuExpanded by remember { mutableStateOf(false) }
+
+    DisposableEffect(auth) {
+        val listener = FirebaseAuth.AuthStateListener { currentUser = it.currentUser }
+        auth.addAuthStateListener(listener)
+        onDispose { auth.removeAuthStateListener(listener) }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(DarkSurface)
+            .statusBarsPadding()
             .border(width = 1.dp, color = TopBarBorder, shape = RoundedCornerShape(0.dp))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = Icons.Default.Menu,
-            contentDescription = "Menu",
-            tint = TextPrimary,
-            modifier = Modifier
-                .size(26.dp)
-                .clickable { onMenuClick() }
-        )
         Spacer(modifier = Modifier.weight(1f))
-        // Logo
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "Dart ",
@@ -135,33 +134,150 @@ fun DartScoreTopBar(onMenuClick: () -> Unit = {}) {
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic
             )
-            // Dart icon decoration
             Text(text = "🎯", fontSize = 16.sp, modifier = Modifier.padding(start = 2.dp))
         }
         Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            imageVector = Icons.Outlined.Notifications,
-            contentDescription = "Obavijesti",
-            tint = TextPrimary,
-            modifier = Modifier
-                .size(26.dp)
-                .padding(end = 0.dp)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(Color(0xFF3A3A3A))
-        ) {
+
+        Box {
             Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Profil",
-                tint = TextSecondary,
+                imageVector = Icons.Outlined.Notifications,
+                contentDescription = "Obavijesti",
+                tint = TextPrimary,
                 modifier = Modifier
-                    .size(20.dp)
-                    .align(Alignment.Center)
+                    .size(26.dp)
+                    .clickable { notificationsExpanded = true }
             )
+            DropdownMenu(
+                expanded = notificationsExpanded,
+                onDismissRequest = { notificationsExpanded = false },
+                modifier = Modifier
+                    .width(300.dp)
+                    .background(DarkCard, RoundedCornerShape(12.dp))
+                    .border(1.dp, BorderSubtle, RoundedCornerShape(12.dp))
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Text(
+                        text = "Obavijesti",
+                        color = TextPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                HorizontalDivider(color = BorderSubtle, thickness = 1.dp)
+                if (notifications.isEmpty()) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.NotificationsNone,
+                            contentDescription = null,
+                            tint = TextHint,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Nema novih obavijesti",
+                            color = TextSecondary,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    notifications.forEach { notification ->
+                        DropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text(
+                                        text = notification.title,
+                                        color = TextPrimary,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = notification.message,
+                                        color = TextSecondary,
+                                        fontSize = 12.sp
+                                    )
+                                    Text(
+                                        text = notification.timeAgo,
+                                        color = TextHint,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            },
+                            onClick = { notificationsExpanded = false }
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+        Box {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(if (currentUser != null) Color(0xFF1A3320) else Color(0xFF3A3A3A))
+                    .clickable {
+                        if (currentUser != null) {
+                            onNavigateToAccount()
+                        } else {
+                            accountMenuExpanded = true
+                        }
+                    }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Profil",
+                    tint = if (currentUser != null) GreenAccent else TextSecondary,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .align(Alignment.Center)
+                )
+            }
+            DropdownMenu(
+                expanded = accountMenuExpanded,
+                onDismissRequest = { accountMenuExpanded = false },
+                modifier = Modifier
+                    .width(220.dp)
+                    .background(DarkCard, RoundedCornerShape(12.dp))
+                    .border(1.dp, BorderSubtle, RoundedCornerShape(12.dp))
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Text(
+                        text = "Račun",
+                        color = TextPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Prijavite se ili registrirajte",
+                        color = TextSecondary,
+                        fontSize = 12.sp
+                    )
+                }
+                HorizontalDivider(color = BorderSubtle, thickness = 1.dp)
+                DropdownMenuItem(
+                    text = {
+                        Text("Prijava", color = TextPrimary, fontWeight = FontWeight.SemiBold)
+                    },
+                    onClick = {
+                        accountMenuExpanded = false
+                        onNavigateToLogin()
+                    }
+                )
+                DropdownMenuItem(
+                    text = {
+                        Text("Registracija", color = TextPrimary, fontWeight = FontWeight.SemiBold)
+                    },
+                    onClick = {
+                        accountMenuExpanded = false
+                        onNavigateToRegister()
+                    }
+                )
+            }
         }
     }
 }
@@ -245,13 +361,15 @@ fun MainGameCard(
     title: String,
     subtitle: String,
     icon: @Composable () -> Unit,
-    borderColor: Color,
-    modifier: Modifier = Modifier
+    accentColor: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Column(
         modifier = modifier
+            .fillMaxHeight()
             .background(DarkCard, RoundedCornerShape(12.dp))
-            .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -273,10 +391,10 @@ fun MainGameCard(
             textAlign = TextAlign.Center,
             lineHeight = 12.sp
         )
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.weight(1f))
         Text(
             text = "→",
-            color = borderColor,
+            color = accentColor,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold
         )
@@ -284,10 +402,15 @@ fun MainGameCard(
 }
 
 @Composable
-fun MainGameCards() {
+fun MainGameCards(
+    onPlayLocal: () -> Unit = {},
+    onPlayOnline: () -> Unit = {},
+    onPlayTraining: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Max)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -295,8 +418,9 @@ fun MainGameCards() {
         MainGameCard(
             title = "IGRAJ\nLOKALNO",
             subtitle = "Igraj s prijateljima\nna istom uređaju",
-            borderColor = GreenAccent,
+            accentColor = GreenAccent,
             modifier = Modifier.weight(1f),
+            onClick = onPlayLocal,
             icon = {
                 Box(
                     modifier = Modifier
@@ -313,8 +437,9 @@ fun MainGameCards() {
         MainGameCard(
             title = "IGRAJ\nONLINE",
             subtitle = "Igraj protiv igrača\niz cijelog svijeta",
-            borderColor = RedAccent,
+            accentColor = RedAccent,
             modifier = Modifier.weight(1f),
+            onClick = onPlayOnline,
             icon = {
                 Box(
                     modifier = Modifier
@@ -336,8 +461,9 @@ fun MainGameCards() {
         MainGameCard(
             title = "TRENING",
             subtitle = "Vježbaj i poboljšaj\nsvoje vještine",
-            borderColor = OliveAccent,
+            accentColor = OliveAccent,
             modifier = Modifier.weight(1f),
+            onClick = onPlayTraining,
             icon = {
                 Box(
                     modifier = Modifier
@@ -363,16 +489,22 @@ data class SecondaryCardData(
     val title: String,
     val subtitle: String,
     val icon: ImageVector,
-    val iconTint: Color
+    val iconTint: Color,
+    val onClick: () -> Unit = {}
 )
 
 @Composable
-fun SecondaryCards() {
+fun SecondaryCards(
+    onStatistics: () -> Unit = {},
+    onLeagues: () -> Unit = {},
+    onFriends: () -> Unit = {},
+    onFeedWall: () -> Unit = {}
+) {
     val cards = listOf(
-        SecondaryCardData("STATISTIKA", "Prati svoj\nnapredak", Icons.Default.BarChart, GreenAccent),
-        SecondaryCardData("LIGE", "Online lige\ni ljestvice", Icons.Default.EmojiEvents, GreenAccent),
-        SecondaryCardData("PRIJATELJI", "Dodaj prijatelja\ni izazovi ih", Icons.Default.Group, GreenAccent),
-        SecondaryCardData("ZID OBJAVA", "Podijeli rezultate\ni izazove", Icons.Outlined.ChatBubbleOutline, GreenAccent),
+        SecondaryCardData("STATISTIKA", "Prati svoj\nnapredak", Icons.Default.BarChart, GreenAccent, onStatistics),
+        SecondaryCardData("LIGE", "Online lige\ni ljestvice", Icons.Default.EmojiEvents, GreenAccent, onLeagues),
+        SecondaryCardData("PRIJATELJI", "Dodaj prijatelja\ni izazovi ih", Icons.Default.Group, GreenAccent, onFriends),
+        SecondaryCardData("ZID OBJAVA", "Podijeli rezultate\ni izazove", Icons.Outlined.ChatBubbleOutline, GreenAccent, onFeedWall),
     )
 
     Row(
@@ -386,6 +518,7 @@ fun SecondaryCards() {
                 modifier = Modifier
                     .weight(1f)
                     .background(DarkCard, RoundedCornerShape(10.dp))
+                    .clickable(onClick = card.onClick)
                     .padding(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -419,100 +552,13 @@ fun SecondaryCards() {
     }
 }
 
-// ─── Activity item ────────────────────────────────────────────────────────────
-
-@Composable
-fun ActivityItemRow(activity: ActivityItem) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.Top
-    ) {
-        // Avatar
-        Box(
-            modifier = Modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .background(Color(0xFF3A3A3A)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = activity.userName.take(1),
-                color = TextPrimary,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = activity.userName,
-                    color = TextPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = " ${activity.actionText}",
-                    color = TextSecondary,
-                    fontSize = 12.sp
-                )
-            }
-            Text(
-                text = activity.timeAgo,
-                color = TextHint,
-                fontSize = 11.sp
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            // Detail box
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(DarkCardLight, RoundedCornerShape(8.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-            ) {
-                Column {
-                    if (activity.detail.isNotEmpty()) {
-                        Text(
-                            text = activity.detail,
-                            color = TextHint,
-                            fontSize = 9.sp,
-                            letterSpacing = 1.sp
-                        )
-                    }
-                    if (activity.score.isNotEmpty()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = activity.score,
-                                color = TextPrimary,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(text = "🎯", fontSize = 16.sp)
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.width(6.dp))
-        Icon(
-            imageVector = Icons.Default.MoreVert,
-            contentDescription = "Više",
-            tint = TextHint,
-            modifier = Modifier.size(18.dp)
-        )
-    }
-}
-
 // ─── Activities Section ───────────────────────────────────────────────────────
 
 @Composable
-fun ActivitiesSection() {
+fun ActivitiesSection(
+    activities: List<ActivityItem>,
+    onShowAll: () -> Unit
+) {
     Column {
         Row(
             modifier = Modifier
@@ -532,20 +578,15 @@ fun ActivitiesSection() {
                 text = "PRIKAŽI SVE >",
                 color = GreenAccent,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.clickable { onShowAll() }
             )
         }
 
-        sampleActivities.forEach { activity ->
-            ActivityItemRow(activity = activity)
-            if (activity != sampleActivities.last()) {
-                HorizontalDivider(
-                    color = Color(0xFF2A2A2A),
-                    thickness = 0.5.dp,
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
-            }
-        }
+        ActivitiesFeedList(
+            activities = activities.take(5),
+            emptyMessage = "Nema objava od prijatelja.\nDodaj prijatelje ili prati igrače."
+        )
         Spacer(modifier = Modifier.height(80.dp))
     }
 }
@@ -555,7 +596,6 @@ fun ActivitiesSection() {
 enum class BottomNavItem(val label: String, val icon: ImageVector) {
     Home("POČETNA", Icons.Filled.Home),
     Results("REZULTATI", Icons.Outlined.CalendarMonth),
-    NewGame("NOVA IGRA", Icons.Default.Add),
     Activities("AKTIVNOSTI", Icons.Outlined.People),
     Profile("PROFIL", Icons.Outlined.Person)
 }
@@ -578,212 +618,42 @@ fun DartScoreBottomNav(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
                 .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
             BottomNavItem.entries.forEach { item ->
-                if (item == BottomNavItem.NewGame) {
-                    // Center FAB-style button
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable { onSelect(item) }
-                    ) {
+                val isSelected = selected == item
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .clickable { onSelect(item) }
+                        .padding(horizontal = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.label,
+                        tint = if (isSelected) GreenAccent else TextHint,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = item.label,
+                        color = if (isSelected) GreenAccent else TextHint,
+                        fontSize = 8.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                    )
+                    if (isSelected) {
+                        Spacer(modifier = Modifier.height(2.dp))
                         Box(
                             modifier = Modifier
-                                .size(52.dp)
-                                .background(GreenAccent, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = item.label,
-                                tint = Color.Black,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = item.label,
-                            color = GreenAccent,
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold
+                                .size(4.dp)
+                                .background(GreenAccent, CircleShape)
                         )
-                    }
-                } else {
-                    val isSelected = selected == item
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clickable { onSelect(item) }
-                            .padding(horizontal = 4.dp)
-                    ) {
-                        Icon(
-                            imageVector = item.icon,
-                            contentDescription = item.label,
-                            tint = if (isSelected) GreenAccent else TextHint,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = item.label,
-                            color = if (isSelected) GreenAccent else TextHint,
-                            fontSize = 8.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
-                        if (isSelected) {
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Box(
-                                modifier = Modifier
-                                    .size(4.dp)
-                                    .background(GreenAccent, CircleShape)
-                            )
-                        }
                     }
                 }
             }
-        }
-    }
-}
-
-// ─── App Drawer ───────────────────────────────────────────────────────────────
-
-@Composable
-fun AppDrawerContent(
-    onNavigateToLogin: () -> Unit,
-    onNavigateToRegister: () -> Unit,
-    onClose: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxHeight()
-            .width(280.dp)
-            .background(DarkSurface)
-            .padding(vertical = 48.dp, horizontal = 20.dp)
-    ) {
-        // Logo u draweru
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "Dart ",
-                color = TextPrimary,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                text = "Score",
-                color = GreenAccent,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(text = " 🎯", fontSize = 18.sp)
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-        HorizontalDivider(color = Color(0xFF2E6B3E), thickness = 1.dp)
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Drawer menu items
-        DrawerMenuItem(
-            icon = Icons.Default.Login,
-            title = "Prijava",
-            subtitle = "Prijavi se na svoj račun",
-            onClick = { onNavigateToLogin(); onClose() }
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        DrawerMenuItem(
-            icon = Icons.Default.PersonAdd,
-            title = "Registracija",
-            subtitle = "Kreiraj novi račun",
-            onClick = { onNavigateToRegister(); onClose() }
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-        HorizontalDivider(color = Color(0xFF2A2A2A), thickness = 0.5.dp)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        DrawerMenuItem(
-            icon = Icons.Default.Home,
-            title = "Početna",
-            subtitle = "Vrati se na početni zaslon",
-            onClick = { onClose() }
-        )
-
-        DrawerMenuItem(
-            icon = Icons.Filled.BarChart,
-            title = "Statistika",
-            subtitle = "Prati svoj napredak",
-            onClick = { onClose() }
-        )
-
-        DrawerMenuItem(
-            icon = Icons.Default.EmojiEvents,
-            title = "Lige",
-            subtitle = "Online lige i ljestvice",
-            onClick = { onClose() }
-        )
-
-        DrawerMenuItem(
-            icon = Icons.Default.Group,
-            title = "Prijatelji",
-            subtitle = "Dodaj i izazovi prijatelje",
-            onClick = { onClose() }
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Version info
-        Text(
-            text = "DartScore v1.0",
-            color = TextHint,
-            fontSize = 11.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
-
-@Composable
-fun DrawerMenuItem(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 10.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(DarkCard, RoundedCornerShape(10.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = GreenAccent,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        Spacer(modifier = Modifier.width(14.dp))
-        Column {
-            Text(
-                text = title,
-                color = TextPrimary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = subtitle,
-                color = TextSecondary,
-                fontSize = 11.sp
-            )
         }
     }
 }
@@ -793,49 +663,139 @@ fun DrawerMenuItem(
 @Composable
 fun HomeScreen(
     onNavigateToLogin: () -> Unit = {},
-    onNavigateToRegister: () -> Unit = {}
+    onNavigateToRegister: () -> Unit = {},
+    onNavigateToLocalPlay: () -> Unit = {},
+    onNavigateToAccount: () -> Unit = {},
+    onNavigateToOnlinePlay: () -> Unit = {},
+    onNavigateToTraining: () -> Unit = {},
+    onNavigateToStatistics: () -> Unit = {},
+    onNavigateToLeagues: () -> Unit = {},
+    onNavigateToFriends: () -> Unit = {},
+    onNavigateToFeedWall: () -> Unit = {},
+    onOpenMatchStats: (String) -> Unit = {}
 ) {
     var selectedNav by remember { mutableStateOf(BottomNavItem.Home) }
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
+    val feedRepository = remember { FeedRepository() }
+    val matchRepository = remember { MatchRepository() }
+    var feedActivities by remember { mutableStateOf<List<ActivityItem>>(emptyList()) }
+    var matchHistory by remember { mutableStateOf<List<com.example.dartscore.model.MatchHistoryItem>>(emptyList()) }
+    var feedRefreshKey by remember { mutableIntStateOf(0) }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            AppDrawerContent(
-                onNavigateToLogin = onNavigateToLogin,
-                onNavigateToRegister = onNavigateToRegister,
-                onClose = { scope.launch { drawerState.close() } }
+    LaunchedEffect(feedRefreshKey) {
+        feedActivities = feedRepository.getNetworkFeed(30).getOrNull()
+            ?.map { it.toActivityItem() }
+            .orEmpty()
+        matchHistory = matchRepository.getMatchHistory(30).getOrNull().orEmpty()
+    }
+
+    Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = {
+            if (selectedNav != BottomNavItem.Profile) {
+                DartScoreTopBar(
+                    onNavigateToAccount = {
+                        selectedNav = BottomNavItem.Profile
+                        onNavigateToAccount()
+                    },
+                    onNavigateToLogin = onNavigateToLogin,
+                    onNavigateToRegister = onNavigateToRegister
+                )
+            }
+        },
+        bottomBar = {
+            DartScoreBottomNav(
+                selected = selectedNav,
+                onSelect = { item ->
+                    selectedNav = item
+                    if (item == BottomNavItem.Home || item == BottomNavItem.Activities) {
+                        feedRefreshKey++
+                    }
+                }
             )
         },
-        scrimColor = Color(0xAA000000)
-    ) {
-        Scaffold(
-            topBar = {
-                DartScoreTopBar(
-                    onMenuClick = { scope.launch { drawerState.open() } }
+        containerColor = DarkBackground
+    ) { innerPadding ->
+        when (selectedNav) {
+                BottomNavItem.Home -> LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(innerPadding)
+                ) {
+                    item { HeroSection() }
+                    item { Spacer(modifier = Modifier.height(8.dp)) }
+                    item {
+                        MainGameCards(
+                            onPlayLocal = onNavigateToLocalPlay,
+                            onPlayOnline = onNavigateToOnlinePlay,
+                            onPlayTraining = onNavigateToTraining
+                        )
+                    }
+                    item { Spacer(modifier = Modifier.height(4.dp)) }
+                    item {
+                        SecondaryCards(
+                            onStatistics = onNavigateToStatistics,
+                            onLeagues = onNavigateToLeagues,
+                            onFriends = onNavigateToFriends,
+                            onFeedWall = onNavigateToFeedWall
+                        )
+                    }
+                    item { Spacer(modifier = Modifier.height(8.dp)) }
+                    item {
+                        ActivitiesSection(
+                            activities = feedActivities,
+                            onShowAll = { selectedNav = BottomNavItem.Activities }
+                        )
+                    }
+                }
+
+                BottomNavItem.Results -> Box(Modifier.fillMaxSize().padding(innerPadding)) {
+                    Column(Modifier.fillMaxSize()) {
+                        Text(
+                            text = "Povijest utakmica",
+                            color = TextPrimary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                        MatchHistoryList(
+                            matches = matchHistory,
+                            emptyMessage = "Nema spremljenih utakmica.\nIgraj lokalno dok si prijavljen.",
+                            onMatchClick = { onOpenMatchStats(it.id) }
+                        )
+                    }
+                }
+
+                BottomNavItem.Activities -> LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(innerPadding)
+                ) {
+                    item {
+                        Text(
+                            text = "Aktivnosti",
+                            color = TextPrimary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                        Text(
+                            text = "Objave prijatelja i igrača koje pratiš",
+                            color = TextSecondary,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                        )
+                    }
+                    item {
+                        ActivitiesFeedList(
+                            activities = feedActivities,
+                            emptyMessage = "Nema objava.\nDodaj prijatelje, prati igrače ili objavi na Zid objava."
+                        )
+                    }
+                    item { Spacer(modifier = Modifier.height(80.dp)) }
+                }
+
+            BottomNavItem.Profile -> Box(Modifier.fillMaxSize().padding(innerPadding)) {
+                AccountScreen(
+                    onNavigateToLogin = onNavigateToLogin,
+                    onNavigateToRegister = onNavigateToRegister,
+                    embedded = true
                 )
-            },
-            bottomBar = {
-                DartScoreBottomNav(
-                    selected = selectedNav,
-                    onSelect = { selectedNav = it }
-                )
-            },
-            containerColor = DarkBackground
-        ) { innerPadding ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                item { HeroSection() }
-                item { Spacer(modifier = Modifier.height(8.dp)) }
-                item { MainGameCards() }
-                item { Spacer(modifier = Modifier.height(4.dp)) }
-                item { SecondaryCards() }
-                item { Spacer(modifier = Modifier.height(8.dp)) }
-                item { ActivitiesSection() }
             }
         }
     }
