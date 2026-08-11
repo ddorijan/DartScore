@@ -151,7 +151,7 @@ fun AccountScreen(
                     onTogglePassword = { currentPasswordVisible = !currentPasswordVisible }
                 )
                 AccountField(
-                    label = "Nova lozinka (opcionalno)",
+                    label = "Nova lozinka",
                     value = newPassword,
                     onValueChange = { newPassword = it },
                     isPassword = true,

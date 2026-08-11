@@ -33,6 +33,21 @@ class FeedRepository(
         }
     }
 
+    suspend fun getMyPosts(limit: Int = 30): Result<List<FeedPost>> {
+        val uid = auth.currentUser?.uid ?: return Result.success(emptyList())
+        return try {
+            val snapshot = firestore.collection("feedPosts")
+                .whereEqualTo("authorUid", uid)
+                .orderBy("createdAtMs", Query.Direction.DESCENDING)
+                .limit(limit.toLong())
+                .get()
+                .await()
+            Result.success(snapshot.documents.mapNotNull { it.toFeedPost() })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun createMatchPost(detail: com.example.dartscore.model.MatchStatsDetail): Result<Unit> {
         return createPost(
             postType = FeedPostType.GAME,

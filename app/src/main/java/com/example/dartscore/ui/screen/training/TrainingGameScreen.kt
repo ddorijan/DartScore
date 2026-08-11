@@ -11,18 +11,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.dartscore.data.TrainingBestScoresStore
 import com.example.dartscore.game.CheckoutChart
 import com.example.dartscore.game.TrainingEngine
 import com.example.dartscore.model.*
+import com.example.dartscore.ui.components.DartboardCanvas
 import com.example.dartscore.ui.components.safeScreenBottom
 import com.example.dartscore.ui.components.ScreenTopBar
 import com.example.dartscore.ui.components.SinglesPointsPicker
 import com.example.dartscore.ui.components.TrainingKeypad
-import com.example.dartscore.ui.screen.DartboardCanvas
 import com.example.dartscore.ui.theme.*
 
 @Composable
@@ -30,9 +32,22 @@ fun TrainingGameScreen(
     mode: TrainingMode,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    val bestScoresStore = remember { TrainingBestScoresStore(context) }
     var gameState by remember(mode) { mutableStateOf(TrainingEngine.initialState(mode)) }
     var inputText by remember { mutableStateOf("") }
     var feedback by remember { mutableStateOf<String?>(null) }
+    val latestState by rememberUpdatedState(gameState)
+
+    DisposableEffect(mode) {
+        onDispose {
+            bestScoresStore.recordIfBetter(latestState)
+        }
+    }
+
+    fun persistBest(state: TrainingGameState = gameState) {
+        bestScoresStore.recordIfBetter(state)
+    }
 
     LaunchedEffect(gameState) {
         feedback = when (val state = gameState) {
@@ -79,15 +94,22 @@ fun TrainingGameScreen(
                         title = "Trening završen",
                         summary = "${state.totalPoints} / 180 bodova",
                         onRestart = {
+                            persistBest(state)
                             gameState = TrainingEngine.initialState(mode)
                             feedback = null
                         },
-                        onExit = onNavigateBack
+                        onExit = {
+                            persistBest(state)
+                            onNavigateBack()
+                        }
                     )
                 } else {
                     SinglesPointsPicker(enabled = true) { points ->
                         val result = TrainingEngine.submitSinglesRound(state, points)
                         gameState = result.state
+                        if (result.outcome == TrainingVisitOutcome.FINISHED) {
+                            persistBest(result.state)
+                        }
                     }
                 }
             }
@@ -117,6 +139,7 @@ fun TrainingGameScreen(
                         result?.let {
                             gameState = it.state
                             inputText = ""
+                            persistBest(it.state)
                         }
                     },
                     onUndo = {
@@ -142,6 +165,7 @@ fun TrainingGameScreen(
                             if (it.outcome != TrainingVisitOutcome.INVALID) {
                                 gameState = it.state
                                 inputText = ""
+                                persistBest(it.state)
                             } else {
                                 feedback = "Neispravan rezultat (max 180)."
                             }
@@ -173,7 +197,7 @@ private fun Checkout121Content(state: TrainingGameState.Checkout121) {
         RemainingScoreDisplay(state.remaining)
         CheckoutSuggestions(state.remaining)
         Spacer(modifier = Modifier.height(8.dp))
-        DartboardCanvas(modifier = Modifier.size(100.dp))
+        DartboardCanvas(modifier = Modifier.size(120.dp))
         Text(
             text = "9 lotki · double out · uspjeh +1 · neuspjeh −1",
             color = TextHint,
@@ -204,7 +228,7 @@ private fun RandomCheckoutContent(state: TrainingGameState.RandomCheckout) {
         RemainingScoreDisplay(state.remaining)
         CheckoutSuggestions(state.remaining)
         Spacer(modifier = Modifier.height(8.dp))
-        DartboardCanvas(modifier = Modifier.size(100.dp))
+        DartboardCanvas(modifier = Modifier.size(120.dp))
         Text(
             text = "3 lotke · double out · novi nasumični cilj svaki pokušaj",
             color = TextHint,
@@ -247,7 +271,7 @@ private fun SinglesContent(state: TrainingGameState.Singles) {
             fontSize = 11.sp
         )
         Spacer(modifier = Modifier.height(8.dp))
-        DartboardCanvas(modifier = Modifier.size(100.dp))
+        DartboardCanvas(modifier = Modifier.size(120.dp))
     }
 }
 
@@ -278,7 +302,7 @@ private fun ScoreTrainingContent(state: TrainingGameState.ScoreTraining) {
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        DartboardCanvas(modifier = Modifier.size(100.dp))
+        DartboardCanvas(modifier = Modifier.size(120.dp))
         Text(
             text = "Ciljaj T20 i visoke segmente · neograničeno rundi",
             color = TextHint,

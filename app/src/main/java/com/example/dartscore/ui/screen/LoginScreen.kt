@@ -33,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
+import com.example.dartscore.ui.components.DartboardCanvas
 import com.example.dartscore.ui.theme.*
 
 @Composable
@@ -59,7 +60,8 @@ fun LoginScreen(
             modifier = Modifier
                 .size(220.dp)
                 .align(Alignment.TopEnd)
-                .offset(x = 30.dp, y = (-20).dp)
+                .offset(x = 30.dp, y = (-20).dp),
+            rotationDegrees = -12f
         )
 
         // Gradient overlay over dartboard

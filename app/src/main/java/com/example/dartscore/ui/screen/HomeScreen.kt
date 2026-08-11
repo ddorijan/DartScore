@@ -1,6 +1,5 @@
 package com.example.dartscore.ui.screen
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,10 +15,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -32,63 +29,13 @@ import com.example.dartscore.data.MatchRepository
 import com.example.dartscore.model.FeedPost
 import com.example.dartscore.model.ActivityItem
 import com.example.dartscore.model.AppNotification
+import com.example.dartscore.ui.components.DartboardCanvas
 import com.example.dartscore.ui.screen.social.ActivitiesFeedList
 import com.example.dartscore.ui.screen.social.MatchHistoryList
 import com.example.dartscore.ui.theme.*
 import com.google.firebase.auth.FirebaseAuth
 
 // ─── Sample data removed — activities load from Firestore feed ───────────────
-
-// ─── Dartboard Canvas ───────────────────────────────────────────────────────
-
-@Composable
-fun DartboardCanvas(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val cx = size.width / 2
-        val cy = size.height / 2
-        val maxR = size.minDimension / 2
-
-        val rings = listOf(
-            maxR to Color(0xFF1A1A1A),
-            maxR * 0.97f to Color(0xFF2A2A2A),
-            maxR * 0.88f to Color(0xFFCC2222),
-            maxR * 0.82f to Color(0xFF1A1A1A),
-            maxR * 0.65f to Color(0xFF228822),
-            maxR * 0.60f to Color(0xFF1A1A1A),
-            maxR * 0.44f to Color(0xFF228822),
-            maxR * 0.38f to Color(0xFF1A1A1A),
-            maxR * 0.15f to Color(0xFFCC2222),
-            maxR * 0.08f to Color(0xFF33CC33),
-        )
-
-        rings.forEach { (r, color) ->
-            drawCircle(color = color, radius = r, center = Offset(cx, cy))
-        }
-
-        // Segment lines
-        val segmentCount = 20
-        for (i in 0 until segmentCount) {
-            val angle = Math.toRadians((i * 360.0 / segmentCount) - 90)
-            drawLine(
-                color = Color(0xFF333333),
-                start = Offset(cx, cy),
-                end = Offset(
-                    cx + (maxR * 0.95f * Math.cos(angle)).toFloat(),
-                    cy + (maxR * 0.95f * Math.sin(angle)).toFloat()
-                ),
-                strokeWidth = 1.dp.toPx()
-            )
-        }
-
-        // Numbers hint ring
-        drawCircle(
-            color = Color(0x33FFFFFF),
-            radius = maxR * 0.93f,
-            center = Offset(cx, cy),
-            style = Stroke(width = 1.dp.toPx())
-        )
-    }
-}
 
 // ─── Top App Bar ─────────────────────────────────────────────────────────────
 
@@ -296,12 +243,14 @@ fun HeroSection() {
                 )
             )
     ) {
-        // Dartboard on the right
+        // Dartboard on the right (slight tilt like mockup)
         DartboardCanvas(
             modifier = Modifier
-                .size(180.dp)
+                .size(200.dp)
                 .align(Alignment.CenterEnd)
-                .padding(end = 8.dp)
+                .offset(x = 28.dp, y = 8.dp)
+                .padding(end = 0.dp),
+            rotationDegrees = -14f
         )
 
         // Fade overlay so text is readable
@@ -775,7 +724,7 @@ fun HomeScreen(
                             modifier = Modifier.padding(16.dp)
                         )
                         Text(
-                            text = "Objave prijatelja i igrača koje pratiš",
+                            text = "Tvoje objave, prijatelji i igrači koje pratiš",
                             color = TextSecondary,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)

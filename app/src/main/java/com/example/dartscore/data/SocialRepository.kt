@@ -95,9 +95,10 @@ class SocialRepository(
             val follows = firestore.collection("follows").document(uid)
                 .collection("list").get().await()
                 .documents.map { it.id }
-            (friends + follows).distinct().take(30)
+            // Always include self so own posts appear in Aktivnosti / Zid objava.
+            (listOf(uid) + friends + follows).distinct().take(30)
         } catch (_: Exception) {
-            emptyList()
+            listOf(uid)
         }
     }
 

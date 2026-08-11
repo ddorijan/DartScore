@@ -10,16 +10,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dartscore.data.FeedRepository
+import com.example.dartscore.model.FeedPost
 import com.example.dartscore.model.FeedPostType
 import com.example.dartscore.ui.components.ScreenTopBar
 import com.example.dartscore.ui.components.dismissKeyboardOnTap
 import com.example.dartscore.ui.components.safeScreenBottom
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.example.dartscore.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -41,11 +42,21 @@ fun FeedWallScreen(
     var status by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var posting by remember { mutableStateOf(false) }
+    var myPosts by remember { mutableStateOf<List<FeedPost>>(emptyList()) }
+    var postsRefreshKey by remember { mutableIntStateOf(0) }
 
     DisposableEffect(auth) {
         val listener = com.google.firebase.auth.FirebaseAuth.AuthStateListener { currentUser = it.currentUser }
         auth.addAuthStateListener(listener)
         onDispose { auth.removeAuthStateListener(listener) }
+    }
+
+    LaunchedEffect(currentUser, postsRefreshKey) {
+        if (currentUser != null) {
+            myPosts = feedRepository.getMyPosts(30).getOrNull().orEmpty()
+        } else {
+            myPosts = emptyList()
+        }
     }
 
     Column(modifier = Modifier.fillMaxSize().background(DarkBackground).safeScreenBottom()) {
@@ -64,7 +75,11 @@ fun FeedWallScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text("Nova objava", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text("Objave prijatelja i onih koje pratiš pojavljuju se u Aktivnostima.", color = TextSecondary, fontSize = 12.sp)
+                Text(
+                    "Tvoje objave i objave prijatelja pojavljuju se i u Aktivnostima.",
+                    color = TextSecondary,
+                    fontSize = 12.sp
+                )
 
                 FeedPostType.entries.forEach { type ->
                     FilterChip(
@@ -126,6 +141,7 @@ fun FeedWallScreen(
                                 detail = ""
                                 scoreHighlight = ""
                                 status = "Objava objavljena!"
+                                postsRefreshKey++
                             } else {
                                 error = result.exceptionOrNull()?.localizedMessage ?: "Objava nije spremljena."
                             }
@@ -136,6 +152,22 @@ fun FeedWallScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = GreenAccent)
                 ) {
                     Text(if (posting) "OBJAVLJIVANJE..." else "OBJAVI", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(color = BorderSubtle)
+                Text("Moje objave", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+
+                if (myPosts.isEmpty()) {
+                    Text(
+                        "Još nemaš objava.",
+                        color = TextSecondary,
+                        fontSize = 13.sp
+                    )
+                } else {
+                    myPosts.forEach { post ->
+                        ActivityItemRow(activity = post.toActivityItem())
+                    }
                 }
             }
         }

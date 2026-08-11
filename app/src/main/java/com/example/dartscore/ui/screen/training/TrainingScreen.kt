@@ -11,13 +11,16 @@ import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.dartscore.data.TrainingBestScore
+import com.example.dartscore.data.TrainingBestScoresStore
 import com.example.dartscore.model.TrainingMode
 import com.example.dartscore.ui.components.safeScreenBottom
 import com.example.dartscore.ui.components.ScreenTopBar
@@ -28,6 +31,11 @@ fun TrainingScreen(
     onNavigateBack: () -> Unit,
     onStartMode: (TrainingMode) -> Unit
 ) {
+    val context = LocalContext.current
+    val bestScores = remember {
+        TrainingBestScoresStore(context).getAll()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -50,7 +58,11 @@ fun TrainingScreen(
             )
 
             TrainingMode.entries.forEach { mode ->
-                TrainingModeCard(mode = mode, onClick = { onStartMode(mode) })
+                TrainingModeCard(
+                    mode = mode,
+                    bestScore = bestScores[mode],
+                    onClick = { onStartMode(mode) }
+                )
             }
         }
     }
@@ -59,6 +71,7 @@ fun TrainingScreen(
 @Composable
 private fun TrainingModeCard(
     mode: TrainingMode,
+    bestScore: TrainingBestScore?,
     onClick: () -> Unit
 ) {
     Row(
@@ -97,6 +110,13 @@ private fun TrainingModeCard(
                 color = TextSecondary,
                 fontSize = 12.sp,
                 lineHeight = 16.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = bestScore?.displayLabel() ?: "Nema rekorda",
+                color = if (bestScore?.hasScore == true) GreenAccent else TextHint,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold
             )
         }
         Text(

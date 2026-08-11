@@ -34,8 +34,8 @@ import com.example.dartscore.model.LocalGameState
 import com.example.dartscore.model.MatchSettings
 import com.example.dartscore.model.MatchStatsDetail
 import com.example.dartscore.model.PlayerGameState
+import com.example.dartscore.ui.components.DartboardCanvas
 import com.example.dartscore.ui.components.safeScreenEdges
-import com.example.dartscore.ui.screen.DartboardCanvas
 import com.example.dartscore.ui.theme.*
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
@@ -145,7 +145,7 @@ fun LocalGameScreen(
                         bottomValue = state.legsDisplay
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    DartboardCanvas(modifier = Modifier.size(90.dp))
+                    DartboardCanvas(modifier = Modifier.size(110.dp))
                 }
 
                 PlayerPanel(
