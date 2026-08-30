@@ -37,7 +37,6 @@ class TrainingBestScoresStore(context: Context) {
         secondary = prefs.getInt(keySecondary(mode), 0)
     )
 
-    /** Returns true if a new personal best was saved. */
     fun recordIfBetter(state: TrainingGameState): Boolean {
         return when (state) {
             is TrainingGameState.Checkout121 -> {

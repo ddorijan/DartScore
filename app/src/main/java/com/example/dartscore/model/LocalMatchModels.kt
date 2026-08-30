@@ -52,10 +52,8 @@ data class PlayerGameState(
     val legsWon: Int = 0,
     val setsWon: Int = 0,
     val legsInCurrentSet: Int = 0,
-    /** Scores and busts from the current leg only (shown in Zadnji hitci). */
     val visitHistory: List<LegVisitEntry> = emptyList(),
     val hasOpened: Boolean = false,
-    /** Match-wide totals used for 3-dart average across all legs. */
     val matchTotalScore: Int = 0,
     val matchVisitCount: Int = 0
 ) {
@@ -78,11 +76,9 @@ data class LocalGameState(
 ) {
     val currentPlayer: PlayerGameState get() = players[currentPlayerIndex]
 
-    /** Player 0 always on the left in head-to-head view. */
     val leftPlayerIndex: Int
         get() = if (players.size == 2) 0 else currentPlayerIndex
 
-    /** Player 1 on the right for 2-player; next in rotation for 3+. */
     val rightPlayerIndex: Int
         get() = if (players.size == 2) 1 else (currentPlayerIndex + 1) % players.size
 

@@ -35,9 +35,6 @@ import com.example.dartscore.ui.screen.social.MatchHistoryList
 import com.example.dartscore.ui.theme.*
 import com.google.firebase.auth.FirebaseAuth
 
-// ─── Sample data removed — activities load from Firestore feed ───────────────
-
-// ─── Top App Bar ─────────────────────────────────────────────────────────────
 
 @Composable
 fun DartScoreTopBar(
@@ -229,7 +226,6 @@ fun DartScoreTopBar(
     }
 }
 
-// ─── Hero Section ─────────────────────────────────────────────────────────────
 
 @Composable
 fun HeroSection() {
@@ -243,7 +239,6 @@ fun HeroSection() {
                 )
             )
     ) {
-        // Dartboard on the right (slight tilt like mockup)
         DartboardCanvas(
             modifier = Modifier
                 .size(200.dp)
@@ -253,7 +248,6 @@ fun HeroSection() {
             rotationDegrees = -14f
         )
 
-        // Fade overlay so text is readable
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -268,7 +262,6 @@ fun HeroSection() {
                 )
         )
 
-        // Text overlay
         Column(
             modifier = Modifier
                 .align(Alignment.CenterStart)
@@ -303,7 +296,7 @@ fun HeroSection() {
     }
 }
 
-// ─── Main Game Cards ──────────────────────────────────────────────────────────
+
 
 @Composable
 fun MainGameCard(
@@ -363,7 +356,6 @@ fun MainGameCards(
             .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // IGRAJ LOKALNO
         MainGameCard(
             title = "IGRAJ\nLOKALNO",
             subtitle = "Igraj s prijateljima\nna istom uređaju",
@@ -382,7 +374,6 @@ fun MainGameCards(
             }
         )
 
-        // IGRAJ ONLINE
         MainGameCard(
             title = "IGRAJ\nONLINE",
             subtitle = "Igraj protiv igrača\niz cijelog svijeta",
@@ -406,7 +397,6 @@ fun MainGameCards(
             }
         )
 
-        // TRENING
         MainGameCard(
             title = "TRENING",
             subtitle = "Vježbaj i poboljšaj\nsvoje vještine",
@@ -432,7 +422,6 @@ fun MainGameCards(
     }
 }
 
-// ─── Secondary Cards ─────────────────────────────────────────────────────────
 
 data class SecondaryCardData(
     val title: String,
@@ -501,7 +490,6 @@ fun SecondaryCards(
     }
 }
 
-// ─── Activities Section ───────────────────────────────────────────────────────
 
 @Composable
 fun ActivitiesSection(
@@ -540,7 +528,6 @@ fun ActivitiesSection(
     }
 }
 
-// ─── Bottom Navigation ────────────────────────────────────────────────────────
 
 enum class BottomNavItem(val label: String, val icon: ImageVector) {
     Home("POČETNA", Icons.Filled.Home),
@@ -607,7 +594,6 @@ fun DartScoreBottomNav(
     }
 }
 
-// ─── Home Screen ──────────────────────────────────────────────────────────────
 
 @Composable
 fun HomeScreen(
@@ -750,7 +736,6 @@ fun HomeScreen(
     }
 }
 
-// ─── Preview ──────────────────────────────────────────────────────────────────
 
 @Preview(showBackground = true, backgroundColor = 0xFF0E0E0E)
 @Composable

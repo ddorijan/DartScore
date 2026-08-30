@@ -57,7 +57,6 @@ class MatchRepository(
         if (auth.currentUser == null) return
 
         try {
-            // serverTimestamp() cannot be used inside array elements — use epoch millis
             val visitData = hashMapOf(
                 "playerIndex" to visit.playerIndex,
                 "playerName" to visit.playerName,

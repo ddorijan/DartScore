@@ -55,7 +55,6 @@ fun LoginScreen(
             .fillMaxSize()
             .background(DarkBackground)
     ) {
-        // Dartboard in top-right background
         DartboardCanvas(
             modifier = Modifier
                 .size(220.dp)
@@ -64,7 +63,6 @@ fun LoginScreen(
             rotationDegrees = -12f
         )
 
-        // Gradient overlay over dartboard
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -92,12 +90,10 @@ fun LoginScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Logo
             AuthLogo()
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Welcome text - left aligned
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.Start
@@ -125,7 +121,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Email field
             AuthInputField(
                 value = email,
                 onValueChange = { email = it },
@@ -135,7 +130,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Password field
             AuthInputField(
                 value = password,
                 onValueChange = { password = it },
@@ -148,7 +142,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Forgot password
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                 Text(
                     text = "Zaboravio si lozinku?",
@@ -160,7 +153,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Login button
             Button(
                 onClick = {
                     val loginEmail = email.trim()
@@ -212,7 +204,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Divider
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -228,7 +219,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Google button
             SocialLoginButton(
                 text = "Nastavi s Googleom",
                 logo = {
@@ -244,7 +234,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Facebook button
             SocialLoginButton(
                 text = "Nastavi s Facebookom",
                 logo = {
@@ -260,7 +249,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Register link
             Text(
                 text = buildAnnotatedString {
                     withStyle(SpanStyle(color = TextSecondary, fontSize = 13.sp)) {
@@ -278,7 +266,6 @@ fun LoginScreen(
     }
 }
 
-// ─── Shared Auth Components ───────────────────────────────────────────────────
 
 @Composable
 fun AuthLogo() {

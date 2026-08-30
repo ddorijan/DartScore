@@ -18,7 +18,6 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 
-/** Standard clockwise order starting at top (20). */
 private val SEGMENT_NUMBERS = intArrayOf(
     20, 1, 18, 4, 13, 6, 10, 15, 2, 17,
     3, 19, 7, 16, 8, 11, 14, 9, 12, 5
@@ -32,10 +31,6 @@ private val BoardWire = Color(0xFFB0B0B0)
 private val NumberRing = Color(0xFF0A0A0A)
 private val OuterRim = Color(0xFF2A2A2A)
 
-/**
- * Realistic dartboard drawn with correct segment order, doubles/triples,
- * bull, and wire spider. Used on home, login, and in-game.
- */
 @Composable
 fun DartboardCanvas(
     modifier: Modifier = Modifier,
@@ -94,15 +89,11 @@ private fun DrawScope.drawDartboard(
         val singleColor = if (isDark) BoardBlack else BoardCream
         val multiColor = if (isDark) BoardRed else BoardGreen
 
-        // Single (whole pie to double outer), then overlay rings
         drawSegment(cx, cy, 0f, doubleOuter, startAngle, segmentAngle, singleColor)
-        // Double ring
         drawSegment(cx, cy, doubleInner, doubleOuter, startAngle, segmentAngle, multiColor)
-        // Triple ring (redraw single under triple, then triple on top)
         drawSegment(cx, cy, tripleInner, tripleOuter, startAngle, segmentAngle, multiColor)
     }
 
-    // Wire spider — radial lines
     val wireWidth = (maxR * 0.006f).coerceAtLeast(0.8f)
     for (i in 0 until 20) {
         val angleRad = Math.toRadians((startOffset + i * segmentAngle).toDouble())
@@ -116,7 +107,6 @@ private fun DrawScope.drawDartboard(
         )
     }
 
-    // Concentric wire rings
     listOf(doubleOuter, doubleInner, tripleOuter, tripleInner, outerBull).forEach { r ->
         drawCircle(
             color = BoardWire,
@@ -126,7 +116,6 @@ private fun DrawScope.drawDartboard(
         )
     }
 
-    // Outer / double bull
     drawCircle(color = BoardGreen, radius = outerBull, center = Offset(cx, cy))
     drawCircle(
         color = BoardWire,
@@ -142,7 +131,6 @@ private fun DrawScope.drawDartboard(
         style = Stroke(width = wireWidth * 0.8f)
     )
 
-    // Thin highlight rim
     drawCircle(
         color = Color(0x44FFFFFF),
         radius = numberOuter * 0.995f,
@@ -165,7 +153,6 @@ private fun DrawScope.drawSegment(
     color: Color
 ) {
     val path = Path().apply {
-        // Compose arc angles: 0° = 3 o'clock, clockwise positive
         arcTo(
             rect = androidx.compose.ui.geometry.Rect(
                 offset = Offset(cx - outerR, cy - outerR),

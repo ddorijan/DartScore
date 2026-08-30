@@ -10,6 +10,5 @@ data class VisitRecord(
     val set: Int,
     val bust: Boolean = false,
     val legWon: Boolean = false,
-    /** Darts thrown on this visit (3 by default; checkout visits use player input). */
     val dartsUsed: Int = 3
 )

@@ -145,7 +145,6 @@ object CheckoutChart {
         159 to listOf("T20", "→160", "---")
     )
 
-    /** Scores that cannot be finished in two darts with double-out (incl. 103). */
     private val NO_TWO_DART = BOGEY + setOf(103)
 
     fun suggestions(remaining: Int, outRule: OutRule = OutRule.DOUBLE): List<String> {
@@ -169,7 +168,6 @@ object CheckoutChart {
         return padToThree(route)
     }
 
-    /** Whether a score can be finished in exactly two darts (double-out). */
     fun hasTwoDartCheckout(remaining: Int, outRule: OutRule): Boolean {
         if (outRule != OutRule.DOUBLE) {
             return remaining in 2..60

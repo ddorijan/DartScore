@@ -55,7 +55,6 @@ fun RegisterScreen(
             .fillMaxSize()
             .background(DarkBackground)
     ) {
-        // Dartboard in top-right background
         DartboardCanvas(
             modifier = Modifier
                 .size(200.dp)
@@ -64,7 +63,6 @@ fun RegisterScreen(
             rotationDegrees = -12f
         )
 
-        // Gradient overlay over dartboard
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -97,7 +95,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Welcome text
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.Start
@@ -119,7 +116,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Username
             AuthInputField(
                 value = username,
                 onValueChange = { username = it },
@@ -129,7 +125,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Email
             AuthInputField(
                 value = email,
                 onValueChange = { email = it },
@@ -140,7 +135,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Password
             AuthInputField(
                 value = password,
                 onValueChange = { password = it },
@@ -153,7 +147,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Confirm password
             AuthInputField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
@@ -166,7 +159,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Birth date
             AuthInputField(
                 value = birthDate,
                 onValueChange = { birthDate = it },
@@ -177,7 +169,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Terms checkbox
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -228,7 +219,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Register button
             Button(
                 onClick = {
                     val cleanUsername = username.trim()

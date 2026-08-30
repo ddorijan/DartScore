@@ -9,7 +9,6 @@ data class LobbySettings(
     val count: Int,
     val inRule: InRule,
     val outRule: OutRule,
-    /** Optional custom join code (4–12 chars). Empty = auto-generated. */
     val customCode: String = ""
 ) {
     val formatLabel: String
