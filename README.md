@@ -128,6 +128,7 @@ Za više detalja pogledajte [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 ## Dodatna dokumentacija
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) – detaljan opis modula, tokova podataka i pravila igre.
+- [`docs/SCREENS.md`](docs/SCREENS.md) – katalog svih Compose ekrana, dijeljenih komponenti i puna navigacijska shema (`AppScreen`, back-handler mapiranje).
 - [`FIREBASE_SETUP.md`](FIREBASE_SETUP.md) – postavljanje Firebase projekta.
 - [`AGENTS.md`](AGENTS.md) – naučene preferencije i činjenice o radnom prostoru (za AI asistente).
 
