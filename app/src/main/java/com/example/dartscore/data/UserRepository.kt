@@ -3,7 +3,9 @@ package com.example.dartscore.data
 import com.example.dartscore.model.OnlineStats
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -18,6 +20,55 @@ class UserRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
     val currentUser get() = auth.currentUser
+
+    suspend fun signInWithGoogleIdToken(idToken: String): Result<UserProfile> {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            val user = auth.signInWithCredential(credential).await().user
+                ?: return Result.failure(IllegalStateException("Prijava Googleom nije uspjela."))
+
+            val displayName = ensureUserProfileDocument(
+                uid = user.uid,
+                displayName = user.displayName.orEmpty(),
+                email = user.email.orEmpty()
+            )
+            Result.success(UserProfile(uid = user.uid, displayName = displayName, email = user.email.orEmpty()))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /** Creates the users/{uid} Firestore document on first sign-in; returns the resolved display name. */
+    private suspend fun ensureUserProfileDocument(uid: String, displayName: String, email: String): String {
+        val docRef = firestore.collection("users").document(uid)
+        val existing = docRef.get().await()
+        if (existing.exists()) {
+            return existing.getString("displayName")?.takeIf { it.isNotBlank() } ?: displayName
+        }
+
+        val cleanName = displayName.ifBlank { email.substringBefore("@") }
+        val profile = hashMapOf(
+            "displayName" to cleanName,
+            "displayNameLower" to cleanName.lowercase(),
+            "email" to email,
+            "birthDate" to "",
+            "avatarUrl" to "",
+            "country" to "",
+            "createdAt" to FieldValue.serverTimestamp(),
+            "defaultGameSettings" to mapOf(
+                "startScore" to 501,
+                "doubleIn" to false,
+                "doubleOut" to true,
+                "setsOrLegs" to "legs"
+            ),
+            "onlineStats" to mapOf(
+                "wins" to 0,
+                "losses" to 0
+            )
+        )
+        docRef.set(profile).await()
+        return cleanName
+    }
 
     suspend fun getCurrentUserDisplayName(): String? {
         val user = auth.currentUser ?: return null

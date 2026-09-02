@@ -29,12 +29,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
+import com.example.dartscore.data.UserRepository
+import com.example.dartscore.data.requestGoogleIdToken
 import com.example.dartscore.ui.components.DartboardCanvas
+import com.example.dartscore.ui.components.safeScreenEdges
 import com.example.dartscore.ui.theme.*
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -49,6 +54,9 @@ fun LoginScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val firebaseAuth = remember { FirebaseAuth.getInstance() }
+    val userRepository = remember { UserRepository(firebaseAuth) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
@@ -82,7 +90,7 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .safeScreenEdges()
                 .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
@@ -229,7 +237,29 @@ fun LoginScreen(
                         fontWeight = FontWeight.ExtraBold
                     )
                 },
-                onClick = {}
+                onClick = {
+                    if (isLoading) return@SocialLoginButton
+                    isLoading = true
+                    errorMessage = null
+                    coroutineScope.launch {
+                        val idTokenResult = requestGoogleIdToken(context)
+                        val idToken = idTokenResult.getOrNull()
+                        if (idToken == null) {
+                            isLoading = false
+                            errorMessage = idTokenResult.exceptionOrNull()?.localizedMessage
+                                ?: "Prijava Googleom nije uspjela."
+                            return@launch
+                        }
+                        val signInResult = userRepository.signInWithGoogleIdToken(idToken)
+                        isLoading = false
+                        if (signInResult.isSuccess) {
+                            onAuthSuccess()
+                        } else {
+                            errorMessage = signInResult.exceptionOrNull()?.localizedMessage
+                                ?: "Prijava Googleom nije uspjela."
+                        }
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(10.dp))

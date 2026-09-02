@@ -21,14 +21,19 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dartscore.ui.theme.*
 import com.example.dartscore.ui.components.DartboardCanvas
+import com.example.dartscore.ui.components.safeScreenEdges
+import com.example.dartscore.data.UserRepository
+import com.example.dartscore.data.requestGoogleIdToken
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(
@@ -49,6 +54,9 @@ fun RegisterScreen(
 
     val firebaseAuth = remember { FirebaseAuth.getInstance() }
     val firestore = remember { FirebaseFirestore.getInstance() }
+    val userRepository = remember { UserRepository(firebaseAuth, firestore) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
@@ -82,7 +90,7 @@ fun RegisterScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .safeScreenEdges()
                 .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
@@ -326,6 +334,58 @@ fun RegisterScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                HorizontalDivider(modifier = Modifier.weight(1f), color = Color(0xFF333333))
+                Text(
+                    text = "  ili registriraj se s  ",
+                    color = TextSecondary,
+                    fontSize = 12.sp
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f), color = Color(0xFF333333))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SocialLoginButton(
+                text = "Nastavi s Googleom",
+                logo = {
+                    Text(
+                        text = "G",
+                        color = Color(0xFF4285F4),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                },
+                onClick = {
+                    if (isLoading) return@SocialLoginButton
+                    isLoading = true
+                    errorMessage = null
+                    coroutineScope.launch {
+                        val idTokenResult = requestGoogleIdToken(context)
+                        val idToken = idTokenResult.getOrNull()
+                        if (idToken == null) {
+                            isLoading = false
+                            errorMessage = idTokenResult.exceptionOrNull()?.localizedMessage
+                                ?: "Registracija Googleom nije uspjela."
+                            return@launch
+                        }
+                        val signInResult = userRepository.signInWithGoogleIdToken(idToken)
+                        isLoading = false
+                        if (signInResult.isSuccess) {
+                            onAuthSuccess()
+                        } else {
+                            errorMessage = signInResult.exceptionOrNull()?.localizedMessage
+                                ?: "Registracija Googleom nije uspjela."
+                        }
+                    }
+                }
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 
